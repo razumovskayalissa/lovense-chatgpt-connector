@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { resolve } from "node:path";
 import type { AppConfig } from "./types.js";
 
@@ -29,6 +30,9 @@ export function loadConfig(): AppConfig {
   const mcpPathSecret = secret("MCP_PATH_SECRET");
   const stateEncryptionKey = secret("STATE_ENCRYPTION_KEY");
   const oauthSigningKey = secret("OAUTH_SIGNING_KEY");
+  const lovenseUserToken = createHmac("sha256", stateEncryptionKey)
+  .update("lovense-user-token")
+  .digest("hex");
   if (new Set([ownerSecret, mcpPathSecret, stateEncryptionKey, oauthSigningKey]).size !== 4) {
     throw new Error("OWNER_SECRET, MCP_PATH_SECRET, STATE_ENCRYPTION_KEY and OAUTH_SIGNING_KEY must be different");
   }
@@ -45,6 +49,7 @@ export function loadConfig(): AppConfig {
     lovenseDeveloperToken: required("LOVENSE_DEVELOPER_TOKEN"),
     lovensePlatformName: required("LOVENSE_PLATFORM_NAME"),
     lovenseUid: process.env.LOVENSE_UID?.trim() || "owner",
+    lovenseUserToken,
     ownerSecret,
     mcpPathSecret,
     oauthSigningKey,
