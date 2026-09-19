@@ -284,7 +284,7 @@ app.post("/api/admin/qr", ownerAuth, async (_req, res) => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           token: config.lovenseDeveloperToken,
-          uid: config.lovenseUid,
+         uid: `${config.lovenseUid}-${Date.now()}`,
           uname: "Lissa",
           utoken: config.lovenseUserToken,
           v: 2,
