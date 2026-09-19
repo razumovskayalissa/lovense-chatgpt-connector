@@ -278,7 +278,7 @@ app.get("/api/admin/status", ownerAuth, (_req, res) => {
 app.post("/api/admin/qr", ownerAuth, async (_req, res) => {
   try {
     const response = await fetch(
-"https://api.lovense-api.com/api/lan/v2/qrcode",
+"https://api.lovense-api.com/api/lan/getQrCode",
       {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -305,9 +305,9 @@ app.post("/api/admin/qr", ownerAuth, async (_req, res) => {
 
     const data = (payload.data || {}) as Record<string, unknown>;
 
-    res.json({
-  qrcodeUrl: String(data.qrcodeUrl || ""),
-  qrcode: String(data.qrcode || ""),
+   res.json({
+  qrcodeUrl: String(data.qr || ""),
+  qrcode: String(data.code || ""),
 });
   } catch (error) {
     res.status(502).json({
