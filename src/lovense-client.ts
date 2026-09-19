@@ -175,17 +175,59 @@ async acceptStandardCallback(payload: Record<string, unknown>): Promise<void> {
     });
   }
 
-  sendCommand(command: Record<string, unknown>, targetIds: string[]): void {
-    if (!this.socket?.connected) throw new Error("Lovense Remote is offline or the server connection is unavailable.");
-    if (targetIds.length === 0) {
-      this.socket.emit("basicapi_send_toy_command_ts", command);
-      return;
-    }
-    // One command per toy also works with Remote versions older than array targeting support.
-    for (const id of targetIds) {
-      this.socket.emit("basicapi_send_toy_command_ts", { ...command, toy: id });
-    }
+  async sendCommand(
+  command: Record<string, unknown>,
+  targetIds: string[],
+): Promise<void> {
+  const uid = this.activeUid || this.options.uid;
+
+  if (!uid) {
+    throw new Error("Lovense is not paired yet. Repair the connection first.");
   }
+
+  const send = async (toy?: string): Promise<void> => {
+    const body: Record<string, unknown> = {
+      token: this.options.developerToken,
+      uid,
+      ...command,
+    };
+
+    if (toy) {
+      body.toy = toy;
+    }
+
+    const response = await fetch(
+      "https://api.lovense-api.com/api/lan/v2/command",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(15_000),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Lovense command failed with HTTP ${response.status}.`,
+      );
+    }
+
+    const payload = (await response.json()) as Record<string, unknown>;
+
+    if (Number(payload.code) !== 200 || payload.result !== true) {
+      throw new Error(
+        String(payload.message || "Lovense rejected the command."),
+      );
+    }
+  };
+
+  if (targetIds.length === 0) {
+    await send();
+    return;
+  }
+
+  await Promise.all(targetIds.map((id) => send(id)));
+}
 
   close(): void {
     this.socket?.close();
