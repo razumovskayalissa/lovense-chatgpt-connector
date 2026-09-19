@@ -331,7 +331,10 @@ lovense.start().catch((error) => {
 
 async function shutdown(): Promise<void> {
   try {
-    lovense.sendCommand({ command: "Function", action: "Stop", timeSec: 0, apiVer: 1 }, []);
+    await lovense.sendCommand(
+      { command: "Function", action: "Stop", timeSec: 0, apiVer: 1 },
+      []
+    );
   } catch {
     // The service may already be disconnected during shutdown.
   }
