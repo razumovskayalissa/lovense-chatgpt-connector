@@ -256,12 +256,44 @@ app.post("/api/admin/qr", ownerAuth, async (_req, res) => {
   }
 });
 
-app.post("/api/admin/stop", ownerAuth, (_req, res) => {
+app.post("/api/admin/qr", ownerAuth, async (_req, res) => {
   try {
-    lovense.sendCommand({ command: "Function", action: "Stop", timeSec: 0, apiVer: 1 }, []);
-    res.json({ stopped: true });
+    const response = await fetch(
+      "https://api.lovense-api.com/api/lan/getQrCode",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          token: config.lovenseDeveloperToken,
+          uid: config.lovenseUid,
+          uname: "Lissa",
+          utoken: config.lovenseUserToken,
+          v: 2,
+        }),
+        signal: AbortSignal.timeout(15_000),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Lovense QR request failed with HTTP ${response.status}.`);
+    }
+
+    const payload = (await response.json()) as Record<string, unknown>;
+
+    if (Number(payload.code) !== 0) {
+      throw new Error(String(payload.message || "Lovense could not create the QR code."));
+    }
+
+    const data = (payload.data || {}) as Record<string, unknown>;
+
+    res.json({
+      qrcodeUrl: String(data.qr || ""),
+      qrcode: String(data.code || ""),
+    });
   } catch (error) {
-    res.status(502).json({ error: error instanceof Error ? error.message : "The stop command could not be delivered." });
+    res.status(502).json({
+      error: error instanceof Error ? error.message : "Could not create the QR code.",
+    });
   }
 });
 
