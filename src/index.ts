@@ -277,16 +277,8 @@ app.get("/api/admin/status", ownerAuth, (_req, res) => {
 
 app.post("/api/admin/qr", ownerAuth, async (_req, res) => {
   try {
-    res.json(await lovense.getQrCode());
-  } catch (error) {
-    res.status(502).json({ error: error instanceof Error ? error.message : "Could not create the QR code." });
-  }
-});
-
-app.post("/api/admin/qr", ownerAuth, async (_req, res) => {
-  try {
     const response = await fetch(
-      "https://api.lovense-api.com/api/lan/getQrCode",
+"https://api.lovense-api.com/api/lan/v2/qrcode",
       {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -314,9 +306,9 @@ app.post("/api/admin/qr", ownerAuth, async (_req, res) => {
     const data = (payload.data || {}) as Record<string, unknown>;
 
     res.json({
-      qrcodeUrl: String(data.qr || ""),
-      qrcode: String(data.code || ""),
-    });
+  qrcodeUrl: String(data.qrcodeUrl || ""),
+  qrcode: String(data.qrcode || ""),
+});
   } catch (error) {
     res.status(502).json({
       error: error instanceof Error ? error.message : "Could not create the QR code.",
