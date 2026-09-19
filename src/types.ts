@@ -37,6 +37,7 @@ export interface LovenseDeviceInfo {
 export interface PersistedState {
   version: 1;
   deviceInfo: LovenseDeviceInfo | null;
+  activeUid?: string;
 }
 
 export interface FunctionAction {
@@ -56,6 +57,7 @@ export interface AppConfig {
   lovenseDeveloperToken: string;
   lovensePlatformName: string;
   lovenseUid: string;
+  lovenseUserToken: string;
   ownerSecret: string;
   mcpPathSecret: string;
   oauthSigningKey: string;
