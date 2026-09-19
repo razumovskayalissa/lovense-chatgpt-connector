@@ -104,7 +104,7 @@ export function createLovenseMcpServer(client: LovenseClient, safety: SafetyCont
           deviceIds || [],
           client.status().deviceInfo,
         );
-        client.sendCommand(
+        await client.sendCommand(
           {
             command: "Function",
             action: validated.action,
@@ -149,7 +149,7 @@ export function createLovenseMcpServer(client: LovenseClient, safety: SafetyCont
         const shortNames: Record<string, string> = {
           Vibrate: "v", Rotate: "r", Pump: "p", Thrusting: "t", Fingering: "f", Suction: "s", Depth: "d", Oscillate: "o",
         };
-        client.sendCommand(
+        await client.sendCommand(
           {
             command: "Pattern",
             rule: `V:1;F:${functions.map((fn) => shortNames[fn]).join(",")};S:${intervalMs}#`,
