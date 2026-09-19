@@ -112,7 +112,7 @@ export function createLovenseMcpServer(client: LovenseClient, safety: SafetyCont
             stopPrevious: continueOtherFunctions ? 0 : 1,
             apiVer: 1,
           },
-          validated.targetIds,
+          deviceIds && deviceIds.length > 0 ? validated.targetIds : [],
         );
         const durationText = validated.durationSeconds === 0 ? "until stopped" : `for ${validated.durationSeconds} seconds`;
         return textResult(`Queued ${validated.action} ${durationText}.`, {
