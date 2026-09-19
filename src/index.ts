@@ -131,26 +131,53 @@ app.use((req, res, next) => {
 app.get("/health", (_req, res) => {
   res.status(200).type("text/plain").send("ok");
 });
-app.post("/lovense/callback", (req, res) => {
-  const body = req.body ?? {};
-  const toys = body.toys ?? body.toyList ?? {};
+app.post("/lovense/callback", async (req, res) => {
+  const body = (req.body || {}) as Record<string, unknown>;
+  const callbackToken = String(body.utoken || "");
 
-  const toyNames = Array.isArray(toys)
-    ? toys.map((toy: any) => toy?.name || toy?.toyType || "unknown")
-    : Object.values(toys as Record<string, any>).map(
-        (toy: any) => toy?.name || toy?.toyType || "unknown",
-      );
+  if (
+    !callbackToken ||
+    !secureEqual(callbackToken, config.lovenseUserToken)
+  ) {
+    console.warn("Rejected Lovense callback: invalid user token.");
+    res.status(401).json({ ok: false });
+    return;
+  }
 
-  console.log("Lovense callback received:", {
-    uid: body.uid ?? "n/a",
-    online: body.online ?? true,
-    platform: body.platform ?? "unknown",
-    appVersion: body.appVersion ?? "unknown",
-    toyCount: toyNames.length,
-    toys: toyNames,
-  });
+  try {
+    await lovense.acceptStandardCallback(body);
 
-  res.status(200).json({ ok: true });
+    const toys =
+      body.toys && typeof body.toys === "object"
+        ? Object.values(body.toys as Record<string, unknown>)
+        : [];
+
+    const toyNames = toys.map((toy) => {
+      const value =
+        toy && typeof toy === "object"
+          ? (toy as Record<string, unknown>)
+          : {};
+
+      return String(value.name || value.nickName || "unknown");
+    });
+
+    console.log("Lovense callback accepted:", {
+      uid: String(body.uid || ""),
+      platform: String(body.platform || ""),
+      appVersion: String(body.appVersion || ""),
+      toyCount: toyNames.length,
+      toys: toyNames,
+    });
+
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error(
+      "Lovense callback failed:",
+      error instanceof Error ? error.message : "unknown error",
+    );
+
+    res.status(400).json({ ok: false });
+  }
 });
 app.use("/guides", express.static(join(process.cwd(), "public", "guides"), {
   dotfiles: "deny",
