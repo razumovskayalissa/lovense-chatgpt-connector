@@ -40,6 +40,7 @@ async function postJson(url: string, body: Record<string, unknown>): Promise<Rec
 export class LovenseClient {
   private socket: SocketLike | null = null;
   private deviceInfo: LovenseDeviceInfo | null = null;
+  private activeUid = "";
   private connectionState: "starting" | "connected" | "disconnected" | "error" = "starting";
   private lastError = "";
 
@@ -48,6 +49,7 @@ export class LovenseClient {
   async start(): Promise<void> {
     const saved = await this.options.store.load();
     this.deviceInfo = saved?.deviceInfo || null;
+    this.activeUid = saved?.activeUid || "";
     try {
       const tokenResult = await postJson("https://api.lovense-api.com/api/basicApi/getToken", {
         token: this.options.developerToken,
@@ -105,7 +107,15 @@ export class LovenseClient {
       }
     });
   }
+async acceptStandardCallback(payload: Record<string, unknown>): Promise<void> {
+  const uid = String(payload.uid || "").trim();
+  if (!uid) {
+    throw new Error("Lovense callback did not contain a user ID.");
+  }
 
+  this.activeUid = uid;
+  await this.updateDeviceInfo(payload);
+}
   private async updateDeviceInfo(payload: Record<string, unknown>): Promise<void> {
     const rawList = Array.isArray(payload.toyList)
       ? payload.toyList
@@ -127,9 +137,13 @@ export class LovenseClient {
   }
 
   private async persist(): Promise<void> {
-    const state: PersistedState = { version: 1, deviceInfo: this.deviceInfo };
-    await this.options.store.save(state);
-  }
+  const state: PersistedState = {
+    version: 1,
+    deviceInfo: this.deviceInfo,
+    activeUid: this.activeUid || undefined,
+  };
+  await this.options.store.save(state);
+}
 
   status(): { connectionState: string; lastError: string; deviceInfo: LovenseDeviceInfo | null } {
     return { connectionState: this.connectionState, lastError: this.lastError, deviceInfo: this.deviceInfo };
