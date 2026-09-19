@@ -120,6 +120,7 @@ function authorizePage(fields: Record<string, string>, error = "", language: UiL
 
 app.disable("x-powered-by");
 app.use(express.urlencoded({ extended: false, limit: "32kb" }));
+app.use(express.json({ limit: "64kb" }));
 app.use((req, res, next) => {
   res.setHeader("x-content-type-options", "nosniff");
   res.setHeader("referrer-policy", "no-referrer");
@@ -130,7 +131,27 @@ app.use((req, res, next) => {
 app.get("/health", (_req, res) => {
   res.status(200).type("text/plain").send("ok");
 });
+app.post("/lovense/callback", (req, res) => {
+  const body = req.body ?? {};
+  const toys = body.toys ?? body.toyList ?? {};
 
+  const toyNames = Array.isArray(toys)
+    ? toys.map((toy: any) => toy?.name || toy?.toyType || "unknown")
+    : Object.values(toys as Record<string, any>).map(
+        (toy: any) => toy?.name || toy?.toyType || "unknown",
+      );
+
+  console.log("Lovense callback received:", {
+    uid: body.uid ?? "n/a",
+    online: body.online ?? true,
+    platform: body.platform ?? "unknown",
+    appVersion: body.appVersion ?? "unknown",
+    toyCount: toyNames.length,
+    toys: toyNames,
+  });
+
+  res.status(200).json({ ok: true });
+});
 app.use("/guides", express.static(join(process.cwd(), "public", "guides"), {
   dotfiles: "deny",
   fallthrough: false,
