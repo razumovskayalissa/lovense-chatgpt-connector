@@ -42,13 +42,18 @@ export function loadConfig(): AppConfig {
     process.env.PUBLIC_BASE_URL?.trim() ||
     (railwayDomain ? `https://${railwayDomain}` : "http://localhost:3000")
   ).replace(/\/$/, "");
-
+const lovenseUid =
+  process.env.LOVENSE_UID?.trim() ||
+  `lissa-${createHmac("sha256", stateEncryptionKey)
+    .update("lovense-user-id")
+    .digest("hex")
+    .slice(0, 16)}`;
   return {
     port: integer("PORT", 3000, 1, 65535),
     publicBaseUrl,
     lovenseDeveloperToken: required("LOVENSE_DEVELOPER_TOKEN"),
     lovensePlatformName: required("LOVENSE_PLATFORM_NAME"),
-    lovenseUid: process.env.LOVENSE_UID?.trim() || "owner",
+    lovenseUid,
     lovenseUserToken,
     ownerSecret,
     mcpPathSecret,
