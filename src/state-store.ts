@@ -1,4 +1,10 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+  randomUUID,
+} from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import type { PersistedState } from "./types.js";
@@ -48,7 +54,7 @@ export class EncryptedStateStore {
       ciphertext: ciphertext.toString("base64"),
     };
     await mkdir(dirname(this.filePath), { recursive: true });
-    const temporary = `${this.filePath}.${process.pid}.tmp`;
+    const temporary = `${this.filePath}.${process.pid}.${randomUUID()}.tmp`;
     await writeFile(temporary, JSON.stringify(envelope), { encoding: "utf8", mode: 0o600 });
     await rename(temporary, this.filePath);
   }
